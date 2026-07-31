@@ -1,0 +1,51 @@
+name: Build portable static site
+
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - "public/**"
+      - "scripts/postprocess-static-export.mjs"
+      - "next.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/build-static-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Export static site
+        run: npx next build
+        env:
+          GITHUB_PAGES: "true"
+
+      - name: Prefix public asset paths
+        run: |
+          node scripts/postprocess-static-export.mjs out
+          touch out/.nojekyll
+
+      - name: Upload static site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: embodied-research-notes-static
+          path: out
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
