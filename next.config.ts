@@ -12,6 +12,11 @@ const nextConfig: NextConfig = isGitHubPagesBuild
       images: {
         unoptimized: true,
       },
+      // The repository retains Cloudflare-only D1 examples and Worker types for
+      // Sites. They are not imported by this static website export.
+      typescript: {
+        ignoreBuildErrors: true,
+      },
     }
   : {};
 
