@@ -1,0 +1,89 @@
+name: Build portable static site
+
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - "public/**"
+      - "next.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/build-static-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Export static site
+        run: npx next build
+        env:
+          GITHUB_PAGES: "true"
+
+      - name: Prefix public asset paths
+        run: |
+          node --input-type=module <<'NODE'
+          import { readdir, readFile, stat, writeFile } from "node:fs/promises";
+          import { join, extname } from "node:path";
+
+          const root = "out";
+          const base = "/embodied-research-notes";
+          const textExtensions = new Set([
+            ".html", ".js", ".css", ".json", ".txt", ".xml",
+          ]);
+
+          async function visit(directory) {
+            for (const name of await readdir(directory)) {
+              const path = join(directory, name);
+              const info = await stat(path);
+              if (info.isDirectory()) {
+                await visit(path);
+                continue;
+              }
+              if (!textExtensions.has(extname(path))) continue;
+
+              const original = await readFile(path, "utf8");
+              const updated = original
+                .replaceAll(
+                  new RegExp(`(?<!${base})/notes/`, "g"),
+                  `${base}/notes/`,
+                )
+                .replaceAll(
+                  new RegExp(`(?<!${base})/downloads/`, "g"),
+                  `${base}/downloads/`,
+                )
+                .replaceAll(
+                  new RegExp(`(?<!${base})/favicon\\.svg`, "g"),
+                  `${base}/favicon.svg`,
+                );
+              if (updated !== original) await writeFile(path, updated);
+            }
+          }
+
+          await visit(root);
+          NODE
+          touch out/.nojekyll
+
+      - name: Upload static site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: embodied-research-notes-static
+          path: out
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
