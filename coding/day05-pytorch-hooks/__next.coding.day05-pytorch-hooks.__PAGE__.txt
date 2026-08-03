@@ -1,0 +1,51 @@
+1:"$Sreact.fragment"
+2:I[22016,["/embodied-research-notes/_next/static/chunks/01xlw8hd842-c.js","/embodied-research-notes/_next/static/chunks/0n4z.7yu76je-.js","/embodied-research-notes/_next/static/chunks/0ka051yepewro.js"],""]
+e:I[97367,["/embodied-research-notes/_next/static/chunks/01xlw8hd842-c.js","/embodied-research-notes/_next/static/chunks/0n4z.7yu76je-.js"],"OutletBoundary"]
+f:"$Sreact.suspense"
+3:T43a,class ActivationRecorder:
+    def __init__(self, model):
+        self.records = {}
+        self._handles = []
+        for name, module in model.named_modules():
+            if isinstance(module, nn.Linear):
+                handle = module.register_forward_hook(
+                    self._make_hook(name)
+                )
+                self._handles.append(handle)
+
+    def _make_hook(self, name):
+        def hook(module, inputs, output):
+            value = output.detach()
+            self.records[name] = ActivationStats(
+                shape=tuple(value.shape),
+                mean=value.mean().item(),
+                std=value.std(unbiased=False).item(),
+            )
+        return hook
+
+    def close(self):
+        for handle in self._handles:
+            handle.remove()
+        self._handles.clear()
+
+
+def attach_gradient_norm_hook(tensor, store, key):
+    if not tensor.requires_grad:
+        raise ValueError("Tensor must require gradients.")
+
+    def hook(grad):
+        store[key] = grad.norm(2).item()
+        return grad
+
+    return tensor.register_hook(hook)0:{"rsc":["$","$1","c",{"children":[["$","main",null,{"children":[["$","header",null,{"className":"site-header shell","children":[["$","$L2",null,{"className":"site-mark","href":"/","children":[["$","b",null,{"children":"不凡天"}],["$","span",null,{"children":"BU FAN TIAN"}]]}],["$","nav",null,{"aria-label":"主导航","children":[["$","$L2",null,{"href":"/","children":"首页"}],["$","$L2",null,{"href":"/notes","children":"笔记"}],["$","$L2",null,{"href":"/coding","children":"Coding 训练"}],["$","$L2",null,{"href":"/coding-skill","children":"Coding Skill"}],["$","$L2",null,{"href":"/#research","children":"研究"}]]}],["$","span",null,{"className":"availability","children":"● RESEARCHING"}]]}],["$","section",null,{"className":"coding-note-head shell","children":[["$","div",null,{"className":"paper-breadcrumb","children":[["$","$L2",null,{"href":"/coding","children":"CODING 训练"}],["$","span",null,{"children":"/"}],["$","span",null,{"children":"DAY 05"}]]}],["$","div",null,{"className":"coding-note-title","children":[["$","span",null,{"children":"DAY 05 · 2026-07-16"}],["$","h1",null,{"children":["PyTorch",["$","br",null,{}],"Hook 导读"]}],["$","p",null,{"children":"了解不修改 forward 即可观察中间激活和梯度的调试接口。本节重新定级为 C：看到源码能识别，需要时会查文档即可。"}]]}],["$","div",null,{"className":"coding-score","children":[["$","span",null,{"children":"TRAINING LEVEL"}],["$","b",null,{"children":"C"}],["$","i",null,{"children":"了解即可"}]]}]]}],["$","article",null,{"className":"coding-note-body shell","children":[["$","aside",null,{"className":"coding-note-nav","children":[["$","span",null,{"children":"CONTENTS"}],["$","a",null,{"href":"#task","children":"01 / 定位"}],["$","a",null,{"href":"#idea","children":"02 / 原理"}],["$","a",null,{"href":"#code","children":"03 / 代码"}],["$","a",null,{"href":"#tests","children":"04 / 验证"}],["$","a",null,{"href":"#review","children":"05 / 复盘"}],["$","a",null,{"href":"#knowledge","children":"06 / 总结"}]]}],["$","div",null,{"className":"coding-note-content","children":[["$","section",null,{"id":"task","children":[["$","span",null,{"className":"record-label","children":"01 · POSITIONING"}],["$","h2",null,{"children":"训练定位"}],["$","p",null,{"children":"原任务要求遍历模块树、注册 forward hook 和 Tensor gradient hook。复盘后确认：Hook 是实用调试接口，但不是当前具身训练主干，不要求从零实现 Recorder。"}],["$","div",null,{"className":"constraint-grid","children":[["$","div",null,{"children":[["$","b",null,{"children":"需要知道"}],["$","p",null,{"children":"Hook 的触发时机、输入输出，以及使用后需要 remove。"}]]}],["$","div",null,{"children":[["$","b",null,{"children":"不要求默写"}],["$","p",null,{"children":"闭包封装、handle 生命周期管理和通用 Hook 框架。"}]]}]]}]]}],["$","section",null,{"id":"idea","children":[["$","span",null,{"className":"record-label","children":"02 · MECHANISM"}],["$","h2",null,{"children":"核心原理"}],["$","ol",null,{"className":"step-list","children":[["$","li",null,{"children":"forward hook 注册在 Module 上，模块前向结束后收到 module、inputs、output。"}],["$","li",null,{"children":"Tensor hook 注册在 Tensor 上，反向传播经过该节点时收到 grad。"}],["$","li",null,{"children":"梯度存在于计算图的每个相关中间节点，不只存在于模型参数。"}],["$","li",null,{"children":"非叶子 Tensor 的梯度会被计算，但默认不长期保存在 .grad。"}]]}]]}],["$","section",null,{"id":"code","children":[["$","span",null,{"className":"record-label","children":"03 · REFERENCE"}],["$","h2",null,{"children":"参考代码"}],["$","pre",null,{"className":"code-block","children":["$","code",null,{"children":"$3"}]}]]}],["$","section",null,{"id":"tests","children":["$L4","$L5","$L6","$L7"]}],"$L8","$L9"]}]]}],"$La","$Lb"]}],["$Lc"],"$Ld"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"X_MxK-NE2jQoAjQ-opLhK"}
+4:["$","span",null,{"className":"record-label","children":"04 · VERIFICATION"}]
+5:["$","h2",null,{"children":"参考验证"}]
+6:["$","div",null,{"className":"test-result","children":[["$","span",null,{"children":"REFERENCE TESTS"}],["$","b",null,{"children":"13 passed in 9.79s"}],["$","i",null,{"children":"VERIFIED"}]]}]
+7:["$","p",null,{"children":"验证模块遍历、参数统计、激活记录、闭包层名绑定、梯度 norm 观测和 handle 移除。"}]
+8:["$","section",null,{"id":"review","children":[["$","span",null,{"className":"record-label","children":"05 · REVIEW"}],["$","h2",null,{"children":"学习策略复盘"}],["$","div",null,{"className":"error-card","children":[["$","span",null,{"children":"PRIORITY"}],["$","h3",null,{"children":"覆盖 API 不等于掌握主干能力"}],["$","p",null,{"children":"Hook 练习一度投入过深。后续训练明确采用 A/B/C 分级，把独立编码时间集中到 Dataset、mask、loss 和训练闭环。"}]]}]]}]
+9:["$","section",null,{"id":"knowledge","children":[["$","span",null,{"className":"record-label","children":"06 · KNOWLEDGE"}],["$","h2",null,{"children":"只记住三点"}],["$","div",null,{"className":"knowledge-grid","children":[["$","article",null,{"children":[["$","span",null,{"children":"FORWARD"}],["$","h3",null,{"children":"Module hook"}],["$","p",null,{"children":[["$","code",null,{"children":"register_forward_hook"}]," 用于观察层的输入或输出。"]}]]}],["$","article",null,{"children":[["$","span",null,{"children":"BACKWARD"}],["$","h3",null,{"children":"Tensor hook"}],["$","p",null,{"children":[["$","code",null,{"children":"tensor.register_hook"}]," 用于观察或修改流经 Tensor 的梯度。"]}]]}],["$","article",null,{"children":[["$","span",null,{"children":"LIFECYCLE"}],["$","h3",null,{"children":"及时移除"}],["$","p",null,{"children":["注册返回 handle；使用完成后调用 ",["$","code",null,{"children":"handle.remove()"}],"。"]}]]}],["$","article",null,{"children":[["$","span",null,{"children":"CLOSURE"}],["$","h3",null,{"children":"闭包记住层名"}],["$","p",null,{"children":"内部 hook 函数可保留外层 name；理解 LEGB 与 late binding 即可。"}]]}]]}]]}]
+a:["$","section",null,{"className":"next-note shell","children":[["$","span",null,{"children":"NEXT"}],["$","h2",null,{"children":"Day 6 · 端到端 Action Chunk Policy"}],["$","$L2",null,{"href":"/coding/day06-action-policy","children":"进入 Day 6 ↗"}]]}]
+b:["$","footer",null,{"className":"footer shell","children":[["$","span",null,{"children":"不凡天 · CODING TRAINING"}],["$","span",null,{"children":"DAY 05 · LEVEL C"}]]}]
+c:["$","script","script-0",{"src":"/embodied-research-notes/_next/static/chunks/0ka051yepewro.js","async":true}]
+d:["$","$Le",null,{"children":["$","$f",null,{"name":"Next.MetadataOutlet","children":"$@10"}]}]
+10:null

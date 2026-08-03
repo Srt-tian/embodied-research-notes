@@ -1,0 +1,111 @@
+1:"$Sreact.fragment"
+2:I[22016,["/embodied-research-notes/_next/static/chunks/01xlw8hd842-c.js","/embodied-research-notes/_next/static/chunks/0n4z.7yu76je-.js","/embodied-research-notes/_next/static/chunks/0ka051yepewro.js"],""]
+e:I[97367,["/embodied-research-notes/_next/static/chunks/01xlw8hd842-c.js","/embodied-research-notes/_next/static/chunks/0n4z.7yu76je-.js"],"OutletBoundary"]
+f:"$Sreact.suspense"
+3:T88a,@dataclass
+class Episode:
+    states: np.ndarray
+    actions: np.ndarray
+
+    def __post_init__(self):
+        self.states = np.asarray(self.states)
+        self.actions = np.asarray(self.actions)
+        if (
+            self.states.ndim != 2
+            or self.actions.ndim != 2
+            or self.states.shape[0] == 0
+            or self.states.shape[0] != self.actions.shape[0]
+        ):
+            raise ValueError("Invalid episode arrays.")
+        self.length = self.states.shape[0]
+
+
+class ActionChunkDataset(Dataset):
+    def __init__(self, episodes, horizon, pad_value=0.0):
+        if not episodes:
+            raise ValueError("Episodes cannot be empty.")
+        if type(horizon) is not int or horizon <= 0:
+            raise ValueError("Horizon must be a positive integer.")
+
+        self.episodes = episodes
+        self.horizon = horizon
+        self.pad_value = pad_value
+        self.state_dim = episodes[0].states.shape[1]
+        self.action_dim = episodes[0].actions.shape[1]
+
+        for episode in episodes:
+            if (episode.states.shape[1] != self.state_dim
+                    or episode.actions.shape[1] != self.action_dim):
+                raise ValueError("Inconsistent dimensions.")
+
+        self._index = [
+            (episode_index, start)
+            for episode_index, episode in enumerate(episodes)
+            for start in range(episode.length)
+        ]
+
+    def __len__(self):
+        return len(self._index)
+
+    def __getitem__(self, index):
+        episode_index, start = self._index[index]
+        episode = self.episodes[episode_index]
+        state = torch.as_tensor(episode.states[start], dtype=torch.float32)
+        actions = torch.full(
+            (self.horizon, self.action_dim),
+            self.pad_value,
+            dtype=torch.float32,
+        )
+        mask = torch.zeros(self.horizon, dtype=torch.bool)
+        valid_length = min(self.horizon, episode.length - start)
+        actions[:valid_length] = torch.as_tensor(
+            episode.actions[start:start + valid_length],
+            dtype=torch.float32,
+        )
+        mask[:valid_length] = True
+        return {"state": state, "actions": actions, "mask": mask}0:{"rsc":["$","$1","c",{"children":[["$","main",null,{"children":[["$","header",null,{"className":"site-header shell","children":[["$","$L2",null,{"className":"site-mark","href":"/","children":[["$","b",null,{"children":"不凡天"}],["$","span",null,{"children":"BU FAN TIAN"}]]}],["$","nav",null,{"aria-label":"主导航","children":[["$","$L2",null,{"href":"/","children":"首页"}],["$","$L2",null,{"href":"/notes","children":"笔记"}],["$","$L2",null,{"href":"/coding","children":"Coding 训练"}],["$","$L2",null,{"href":"/coding-skill","children":"Coding Skill"}],["$","$L2",null,{"href":"/#research","children":"研究"}]]}],["$","span",null,{"className":"availability","children":"● RESEARCHING"}]]}],["$","section",null,{"className":"coding-note-head shell","children":[["$","div",null,{"className":"paper-breadcrumb","children":[["$","$L2",null,{"href":"/coding","children":"CODING 训练"}],["$","span",null,{"children":"/"}],["$","span",null,{"children":"DAY 06"}]]}],["$","div",null,{"className":"coding-note-title","children":[["$","span",null,{"children":"DAY 06 · 2026-07-17"}],["$","h1",null,{"children":["端到端",["$","br",null,{}],"Action Policy"]}],["$","p",null,{"children":"第一周综合项目：从可变长度机器人 episode 构造 Dataset，经 DataLoader 形成 batch，训练 state-conditioned action chunk policy。"}]]}],["$","div",null,{"className":"coding-score","children":[["$","span",null,{"children":"FINAL SCORE · LEVEL A"}],["$","b",null,{"children":"9.0"}],["$","i",null,{"children":"/ 10"}]]}]]}],["$","article",null,{"className":"coding-note-body shell","children":[["$","aside",null,{"className":"coding-note-nav","children":[["$","span",null,{"children":"CONTENTS"}],["$","a",null,{"href":"#task","children":"01 / 题目"}],["$","a",null,{"href":"#idea","children":"02 / 思路"}],["$","a",null,{"href":"#code","children":"03 / 代码"}],["$","a",null,{"href":"#tests","children":"04 / 测试"}],["$","a",null,{"href":"#review","children":"05 / 复盘"}],["$","a",null,{"href":"#knowledge","children":"06 / 总结"}]]}],["$","div",null,{"className":"coding-note-content","children":[["$","section",null,{"id":"task","children":[["$","span",null,{"className":"record-label","children":"01 · TASK · LEVEL A"}],["$","h2",null,{"children":"题目与约束"}],["$","p",null,{"children":"实现完整训练链路：Episode 校验、全局样本索引、action chunk padding、valid mask、MLP、masked MSE、train/eval step。"}],["$","div",null,{"className":"constraint-grid","children":[["$","div",null,{"children":[["$","b",null,{"children":"输入"}],["$","p",null,{"children":"多个形状为 (T_i,S) 与 (T_i,A) 的独立 episode。"}]]}],["$","div",null,{"children":[["$","b",null,{"children":"输出"}],["$","p",null,{"children":"单样本 (S)、(H,A)、(H)，batch 后得到 (B,S)、(B,H,A)、(B,H)。"}]]}]]}]]}],["$","section",null,{"id":"idea","children":[["$","span",null,{"className":"record-label","children":"02 · DATA FLOW"}],["$","h2",null,{"children":"解题思路"}],["$","ol",null,{"className":"step-list","children":[["$","li",null,{"children":"每个 episode 的每个 timestep 都作为一个样本起点，因此 Dataset 长度为 ΣT_i。"}],["$","li",null,{"children":"索引表保存 (episode_index,start)，同时定位轨迹和局部时间。"}],["$","li",null,{"children":"尾部剩余动作不足 H 时只在当前 episode 内取值，其余 padding。"}],["$","li",null,{"children":"DataLoader 对字典中同名 Tensor 沿新第 0 维 stack。"}],["$","li",null,{"children":"Masked MSE 的分母只计算有效 timestep × action_dim。"}]]}],["$","div",null,{"className":"shape-callout","children":[["$","span",null,{"children":"PIPELINE"}],["$","b",null,{"children":"(T_i,S/A) → (B,H,A)"}],["$","p",null,{"children":"Episode → Dataset sample → DataLoader batch → ActionChunkMLP → masked loss。"}]]}]]}],["$","section",null,{"id":"code","children":[["$","span",null,{"className":"record-label","children":"03 · IMPLEMENTATION"}],["$","h2",null,{"children":"最终代码"}],["$","h3",null,{"children":"Episode 与 Dataset"}],["$","pre",null,{"className":"code-block","children":["$","code",null,{"children":"$3"}]}],"$L4","$L5"]}],"$L6","$L7","$L8"]}]]}],"$L9","$La"]}],["$Lb"],"$Lc"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"X_MxK-NE2jQoAjQ-opLhK"}
+4:["$","h3",null,{"children":"Masked loss 与训练"}]
+d:T49a,def masked_mse_loss(predictions, targets, mask):
+    if predictions.ndim != 3:
+        raise ValueError("Predictions must be 3D.")
+    if predictions.shape != targets.shape:
+        raise ValueError("Prediction/target shapes must match.")
+    if mask.shape != predictions.shape[:2] or mask.dtype != torch.bool:
+        raise ValueError("Invalid mask.")
+    if not torch.any(mask):
+        raise ValueError("Mask needs at least one valid timestep.")
+
+    squared_error = (predictions - targets) ** 2
+    masked_error = squared_error * mask.unsqueeze(-1)
+    valid_elements = mask.sum() * predictions.shape[-1]
+    return masked_error.sum() / valid_elements
+
+
+def train_step(model, optimizer, batch):
+    model.train()
+    optimizer.zero_grad()
+    predictions = model(batch["state"])
+    loss = masked_mse_loss(
+        predictions, batch["actions"], batch["mask"]
+    )
+    loss.backward()
+    optimizer.step()
+    return loss.item()
+
+
+def evaluate_batch(model, batch):
+    model.eval()
+    with torch.no_grad():
+        predictions = model(batch["state"])
+        loss = masked_mse_loss(
+            predictions, batch["actions"], batch["mask"]
+        )
+    return loss.item()5:["$","pre",null,{"className":"code-block","children":["$","code",null,{"children":"$d"}]}]
+6:["$","section",null,{"id":"tests","children":[["$","span",null,{"className":"record-label","children":"04 · VERIFICATION"}],["$","h2",null,{"children":"测试结果"}],["$","div",null,{"className":"test-result","children":[["$","span",null,{"children":"REFERENCE SUITE"}],["$","b",null,{"children":"24 passed in 8.54s"}],["$","i",null,{"children":"100%"}]]}],["$","p",null,{"children":"覆盖空 episode、非法 horizon、跨 episode 泄漏、tail padding、dtype、DataLoader shape、模型输入、masked loss 和参数更新。"}]]}]
+7:["$","section",null,{"id":"review","children":[["$","span",null,{"className":"record-label","children":"05 · ERROR REVIEW"}],["$","h2",null,{"children":"错误复盘"}],["$","div",null,{"className":"error-card","children":[["$","span",null,{"children":"VALIDATION"}],["$","h3",null,{"children":"压缩注释导致边界校验遗漏"}],["$","p",null,{"children":"最初只检查 states/actions 长度相等，遗漏 T>0；forward 和 masked loss 也未按测试契约主动验证 shape、dtype 与非空 mask。后续题目会把每项校验拆成清晰 checklist。"}]]}],["$","div",null,{"className":"error-card","children":[["$","span",null,{"children":"MASK"}],["$","h3",null,{"children":"完整 chunk 的 mask 未设为 True"}],["$","p",null,{"children":"原实现仅在 padding 分支更新 mask，导致完整 chunk 全为 False。统一创建 padding buffer，再用 valid_length 同时填 actions 和 mask，消除了分支遗漏。"}]]}],["$","div",null,{"className":"error-card","children":[["$","span",null,{"children":"BOUNDARY"}],["$","h3",null,{"children":"Tail chunk 不能跨 episode"}],["$","p",null,{"children":"episode 之间通常存在任务结束、环境 reset 和状态动作跳变。跨边界读取会制造不存在的连续轨迹，属于数据泄漏。"}]]}]]}]
+8:["$","section",null,{"id":"knowledge","children":[["$","span",null,{"className":"record-label","children":"06 · KNOWLEDGE"}],["$","h2",null,{"children":"知识点总结"}],["$","div",null,{"className":"knowledge-grid","children":[["$","article",null,{"children":[["$","span",null,{"children":"DATASET"}],["$","h3",null,{"children":"len 与 getitem"}],["$","p",null,{"children":[["$","code",null,{"children":"__len__"}]," 给出样本数；",["$","code",null,{"children":"__getitem__"}]," 定义一条样本如何构造。"]}]]}],["$","article",null,{"children":[["$","span",null,{"children":"INDEX"}],["$","h3",null,{"children":"二维坐标映射"}],["$","p",null,{"children":"(episode,start) 将扁平 Dataset 索引映射回独立轨迹与局部时间。"}]]}],["$","article",null,{"children":[["$","span",null,{"children":"COLLATE"}],["$","h3",null,{"children":"自动增加 batch 维"}],["$","p",null,{"children":"默认 collate 对同名、同 shape Tensor 执行 stack，新增第 0 维 B。"}]]}],["$","article",null,{"children":[["$","span",null,{"children":"MASKED LOSS"}],["$","h3",null,{"children":"Padding 不进分母"}],["$","p",null,{"children":"乘 mask 只清零分子；必须除以有效 timestep × A，或用布尔索引后 mean。"}]]}],["$","article",null,{"children":[["$","span",null,{"children":"COPY"}],["$","h3",null,{"children":"Episode 只增加引用"}],["$","p",null,{"children":[["$","code",null,{"children":"episode=self.episodes[i]"}]," 不发生拷贝，只增加对同一 Episode 对象的引用。"]}]]}],["$","article",null,{"children":[["$","span",null,{"children":"VALIDATION"}],["$","h3",null,{"children":"逐项检查契约"}],["$","p",null,{"children":"ndim、shape、非空、dtype、有效元素需要分别检查，避免一句注释掩盖遗漏。"}]]}]]}]]}]
+9:["$","section",null,{"className":"next-note shell","children":[["$","span",null,{"children":"NEXT"}],["$","h2",null,{"children":"Day 7 · 完整 Epoch 训练与评估"}],["$","$L2",null,{"href":"/coding/day07-epoch-trainer","children":"进入 Day 7 ↗"}]]}]
+a:["$","footer",null,{"className":"footer shell","children":[["$","span",null,{"children":"不凡天 · CODING TRAINING"}],["$","span",null,{"children":"DAY 06 · LEVEL A · VERIFIED"}]]}]
+b:["$","script","script-0",{"src":"/embodied-research-notes/_next/static/chunks/0ka051yepewro.js","async":true}]
+c:["$","$Le",null,{"children":["$","$f",null,{"name":"Next.MetadataOutlet","children":"$@10"}]}]
+10:null

@@ -1,0 +1,57 @@
+1:"$Sreact.fragment"
+2:I[22016,["/embodied-research-notes/_next/static/chunks/01xlw8hd842-c.js","/embodied-research-notes/_next/static/chunks/0n4z.7yu76je-.js","/embodied-research-notes/_next/static/chunks/0ka051yepewro.js"],""]
+b:I[97367,["/embodied-research-notes/_next/static/chunks/01xlw8hd842-c.js","/embodied-research-notes/_next/static/chunks/0n4z.7yu76je-.js"],"OutletBoundary"]
+c:"$Sreact.suspense"
+3:T497,class DropoutActionMLP(nn.Module):
+    def __init__(self, state_dim, action_dim, hidden_dim=32):
+        super().__init__()
+        self.network = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim, action_dim),
+        )
+
+    def forward(self, states):
+        return self.network(states)
+
+
+def action_mse_loss(model, states, targets):
+    predictions = model(states)
+    return ((predictions - targets) ** 2).mean()
+
+
+def gradient_l2_norm(model):
+    total = 0.0
+    for parameter in model.parameters():
+        if parameter.grad is not None:
+            total += parameter.grad.detach().pow(2).sum().item()
+    return total ** 0.5
+
+
+def train_step(model, optimizer, states, targets, max_grad_norm):
+    model.train()
+    optimizer.zero_grad()
+
+    loss = action_mse_loss(model, states, targets)
+    loss.backward()
+
+    grad_norm = torch.nn.utils.clip_grad_norm_(
+        model.parameters(), max_grad_norm
+    ).item()
+    optimizer.step()
+    return loss.item(), grad_norm
+
+
+def predict(model, states):
+    model.eval()
+    with torch.no_grad():
+        return model(states)0:{"rsc":["$","$1","c",{"children":[["$","main",null,{"children":[["$","header",null,{"className":"site-header shell","children":[["$","$L2",null,{"className":"site-mark","href":"/","children":[["$","b",null,{"children":"不凡天"}],["$","span",null,{"children":"BU FAN TIAN"}]]}],["$","nav",null,{"aria-label":"主导航","children":[["$","$L2",null,{"href":"/","children":"首页"}],["$","$L2",null,{"href":"/notes","children":"笔记"}],["$","$L2",null,{"href":"/coding","children":"Coding 训练"}],["$","$L2",null,{"href":"/coding-skill","children":"Coding Skill"}],["$","$L2",null,{"href":"/#research","children":"研究"}]]}],["$","span",null,{"className":"availability","children":"● RESEARCHING"}]]}],["$","section",null,{"className":"coding-note-head shell","children":[["$","div",null,{"className":"paper-breadcrumb","children":[["$","$L2",null,{"href":"/coding","children":"CODING 训练"}],["$","span",null,{"children":"/"}],["$","span",null,{"children":"DAY 04"}]]}],["$","div",null,{"className":"coding-note-title","children":[["$","span",null,{"children":"DAY 04 · 2026-07-16"}],["$","h1",null,{"children":["PyTorch",["$","br",null,{}],"梯度诊断"]}],["$","p",null,{"children":"接手一段语法正确但训练语义错误的代码，定位断梯度、全局梯度范数、训练/推理模式与梯度裁剪顺序。"}]]}],["$","div",null,{"className":"coding-score","children":[["$","span",null,{"children":"FINAL SCORE"}],["$","b",null,{"children":"9.3"}],["$","i",null,{"children":"/ 10"}]]}]]}],["$","article",null,{"className":"coding-note-body shell","children":[["$","aside",null,{"className":"coding-note-nav","children":[["$","span",null,{"children":"CONTENTS"}],["$","a",null,{"href":"#task","children":"01 / 题目"}],["$","a",null,{"href":"#idea","children":"02 / 思路"}],["$","a",null,{"href":"#code","children":"03 / 代码"}],["$","a",null,{"href":"#tests","children":"04 / 测试"}],["$","a",null,{"href":"#review","children":"05 / 复盘"}],["$","a",null,{"href":"#knowledge","children":"06 / 知识点"}]]}],["$","div",null,{"className":"coding-note-content","children":[["$","section",null,{"id":"task","children":[["$","span",null,{"className":"record-label","children":"01 · TASK"}],["$","h2",null,{"children":"题目与约束"}],["$","p",null,{"children":"修复一个带 Dropout 的动作预测训练管线。公开函数签名和测试不可修改；训练函数必须返回标量 loss 与裁剪前的全局梯度 L2 norm，推理必须确定且不构建计算图。"}],["$","div",null,{"className":"constraint-grid","children":[["$","div",null,{"children":[["$","b",null,{"children":"训练"}],["$","p",null,{"children":"保留计算图、清除旧梯度、反向传播、裁剪、更新参数。"}]]}],["$","div",null,{"children":[["$","b",null,{"children":"推理"}],["$","p",null,{"children":"关闭 Dropout，并禁用 autograd 图记录。"}]]}]]}]]}],["$","section",null,{"id":"idea","children":[["$","span",null,{"className":"record-label","children":"02 · APPROACH"}],["$","h2",null,{"children":"排查思路"}],["$","ol",null,{"className":"step-list","children":[["$","li",null,{"children":"先检查 loss 的 requires_grad 和 grad_fn，定位断图位置。"}],["$","li",null,{"children":"检查 backward 后每个 parameter.grad 是否存在。"}],["$","li",null,{"children":"用已知 3、4、12 梯度验证全局 L2 norm 应为 13。"}],["$","li",null,{"children":"核对 zero_grad、backward、clip、step 的生命周期顺序。"}],["$","li",null,{"children":"分别检查 train/eval 模式和 autograd 是否启用。"}]]}],["$","div",null,{"className":"shape-callout","children":[["$","span",null,{"children":"TRAIN ORDER"}],["$","b",null,{"children":"zero → fwd → bwd → clip → step"}],["$","p",null,{"children":"梯度只有在 backward 后才存在；裁剪必须发生在参数更新之前。"}]]}]]}],["$","section",null,{"id":"code","children":[["$","span",null,{"className":"record-label","children":"03 · IMPLEMENTATION"}],["$","h2",null,{"children":"最终代码"}],["$","p",null,{"children":"以下为删除全部故障标记后的干净版本。"}],["$","pre",null,{"className":"code-block","children":["$","code",null,{"children":"$3"}]}]]}],"$L4","$L5","$L6"]}]]}],"$L7","$L8"]}],["$L9"],"$La"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"X_MxK-NE2jQoAjQ-opLhK"}
+4:["$","section",null,{"id":"tests","children":[["$","span",null,{"className":"record-label","children":"04 · VERIFICATION"}],["$","h2",null,{"children":"测试结果"}],["$","div",null,{"className":"test-result","children":[["$","span",null,{"children":"PYTEST"}],["$","b",null,{"children":"12 passed"}],["$","i",null,{"children":"100%"}]]}],["$","p",null,{"children":"覆盖可微 loss、参数梯度、全局 L2 norm、旧梯度清理、参数更新、训练模式、裁剪前后 norm、确定性推理以及禁用 autograd。"}]]}]
+5:["$","section",null,{"id":"review","children":[["$","span",null,{"className":"record-label","children":"05 · ERROR REVIEW"}],["$","h2",null,{"children":"错误复盘"}],["$","div",null,{"className":"error-card","children":[["$","span",null,{"children":"DETACH"}],["$","h3",null,{"children":"模型输出过早脱离计算图"}],["$","p",null,{"children":["对 predictions 调用 ",["$","code",null,{"children":"detach()"}]," 后，loss 不再知道自己与模型参数的关系，",["$","code",null,{"children":"requires_grad=False"}],"，无法反向传播。"]}]]}],["$","div",null,{"className":"error-card","children":[["$","span",null,{"children":"GLOBAL NORM"}],["$","h3",null,{"children":"不能直接相加各参数的 norm"}],["$","p",null,{"children":"全局 L2 norm 是所有梯度元素平方求和后再开方；分别计算 norm 后直接相加会得到错误结果。"}]]}],["$","div",null,{"className":"error-card","children":[["$","span",null,{"children":"RETURN VALUE"}],["$","h3",null,{"children":"裁剪前 norm 应读取 API 返回值"}],["$","p",null,{"children":[["$","code",null,{"children":"clip_grad_norm_"}]," 原地裁剪梯度，但返回的是裁剪前的总 norm。裁剪后再调用自定义函数得到的是另一项诊断值。"]}]]}]]}]
+6:["$","section",null,{"id":"knowledge","children":[["$","span",null,{"className":"record-label","children":"06 · KNOWLEDGE"}],["$","h2",null,{"children":"知识点总结"}],["$","div",null,{"className":"knowledge-grid","children":[["$","article",null,{"children":[["$","span",null,{"children":"AUTOGRAD"}],["$","h3",null,{"children":"forward 记录，backward 计算"}],["$","p",null,{"children":"启用梯度时，forward 构建并保存计算图；backward 才沿图计算参数梯度。"}]]}],["$","article",null,{"children":[["$","span",null,{"children":"DETACH / ITEM"}],["$","h3",null,{"children":"两种脱离方式"}],["$","p",null,{"children":[["$","code",null,{"children":"detach()"}]," 返回不追踪梯度的 Tensor；",["$","code",null,{"children":"item()"}]," 将单元素 Tensor 转为 Python 数值。"]}]]}],["$","article",null,{"children":[["$","span",null,{"children":"MODE"}],["$","h3",null,{"children":"eval 不等于 no_grad"}],["$","p",null,{"children":"eval 控制 Dropout/BatchNorm 行为；no_grad 控制是否记录 autograd 图，推理通常两者都要。"}]]}],["$","article",null,{"children":[["$","span",null,{"children":"CLIPPING"}],["$","h3",null,{"children":"裁剪不是清零"}],["$","p",null,{"children":"梯度爆炸时按总 norm 缩放梯度方向；必须在 backward 后、step 前执行。"}]]}],["$","article",null,{"children":[["$","span",null,{"children":"ZERO GRAD"}],["$","h3",null,{"children":"清除的是梯度"}],["$","p",null,{"children":"PyTorch 默认累加 parameter.grad；普通训练每轮 backward 前应清除旧梯度，而不是“清除 loss”。"}]]}],["$","article",null,{"children":[["$","span",null,{"children":"DEBUG"}],["$","h3",null,{"children":"先检查梯度链路"}],["$","p",null,{"children":"训练不更新时依次检查 requires_grad、grad_fn、parameter.grad、参数前后差异和 optimizer 顺序。"}]]}]]}]]}]
+7:["$","section",null,{"className":"next-note shell","children":[["$","span",null,{"children":"NEXT"}],["$","h2",null,{"children":"Day 5 · PyTorch 源码阅读与 Hook"}],["$","$L2",null,{"href":"/coding","children":"返回训练档案 ↗"}]]}]
+8:["$","footer",null,{"className":"footer shell","children":[["$","span",null,{"children":"不凡天 · CODING TRAINING"}],["$","span",null,{"children":"DAY 04 · VERIFIED"}]]}]
+9:["$","script","script-0",{"src":"/embodied-research-notes/_next/static/chunks/0ka051yepewro.js","async":true}]
+a:["$","$Lb",null,{"children":["$","$c",null,{"name":"Next.MetadataOutlet","children":"$@d"}]}]
+d:null
