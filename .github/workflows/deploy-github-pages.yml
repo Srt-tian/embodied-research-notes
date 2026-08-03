@@ -71,4 +71,19 @@ jobs:
       - name: Request GitHub Pages build
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds"
+        run: |
+          set +e
+          response="$(gh api --include --method POST "repos/${GITHUB_REPOSITORY}/pages/builds" 2>&1)"
+          status=$?
+          set -e
+          if [ "${status}" -ne 0 ]; then
+            printf '%s\n' "${response}" > published/.pages-build-error.log
+            cd published
+            git add .pages-build-error.log
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Record Pages build request failure"
+            git push origin HEAD:agent/github-pages-export
+            exit "${status}"
+          fi
+          printf '%s\n' "${response}"
