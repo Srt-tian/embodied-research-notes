@@ -150,6 +150,15 @@ export const codingEntries: CodingEntry[] = [
 // 后续新增内容时，优先在这里增加记录；页面结构无需重写。
 export const researchEntries: ResearchEntry[] = [
   {
+    slug: "masquerade",
+    kind: "paper",
+    title: "Masquerade",
+    subtitle: "Learning from In-the-wild Human Videos using Data-Editing",
+    date: "2025-08",
+    tags: ["Human Video", "Co-training", "Data Editing", "Diffusion Policy"],
+    status: "published",
+  },
+  {
     slug: "pi05-open-world-generalization",
     kind: "paper",
     title: "π0.5",
