@@ -40,8 +40,9 @@ jobs:
         run: npx next build
         env:
           GITHUB_PAGES: "true"
+          NEXT_PUBLIC_BASE_PATH: "/embodied-research-notes"
 
-      - name: Prefix public asset paths
+      - name: Validate exported paths
         run: |
           node scripts/postprocess-static-export.mjs out
           touch out/.nojekyll

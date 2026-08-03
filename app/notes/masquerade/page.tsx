@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { SiteHeader } from "../../site-header";
+import { assetPath } from "../../site-paths";
 
 const chapters = [
   { id: "overview", label: "01 核心结论" },
@@ -32,7 +33,7 @@ export default function MasqueradeNote() {
           {active === "overview" && <>
             <div className="evidence-label">论文明确说明 · Figure 2 / Section III-C</div>
             <p className="paper-lead">Masquerade 的真正重点不是把人类视频变成机器人 action 数据，而是让编辑视频在策略训练期间持续承担未来二维轨迹任务，以 co-training 保住并增强共享 ViT 的视觉能力。</p>
-            <figure><img src="/notes/masquerade-overview.png" alt="Masquerade 数据编辑、视觉预训练与共同训练流程" /><figcaption>Figure 2 · 从原论文 PDF 高清裁切；实线为机器人策略分支，虚线为编辑视频辅助分支</figcaption></figure>
+            <figure><img src={assetPath("/notes/masquerade-overview.png")} alt="Masquerade 数据编辑、视觉预训练与共同训练流程" /><figcaption>Figure 2 · 从原论文 PDF 高清裁切；实线为机器人策略分支，虚线为编辑视频辅助分支</figcaption></figure>
             <div className="ling-flow"><div><span>01 · EDIT</span><b>视觉本体对齐</b><p>擦除人臂，叠加虚拟双臂机器人。</p></div><i>→</i><div><span>02 · PRETRAIN</span><b>未来运动表征</b><p>ViT 从当前帧预测未来二维末端轨迹。</p></div><i>→</i><div><span>03 · COTRAIN</span><b>持续共享主干</b><p>编辑视频辅助 loss 与真机 policy loss 同时更新 ViT。</p></div></div>
             <div className="insight"><span>我们的核心判断</span><p>论文表面的记忆点是 robot overlay，实验真正揭示的关键则是：完成视觉本体对齐之后，必须让人类视频持续参与 co-training；简单的“预训练后仅用机器人数据微调”会显著丢失 OOD 泛化。</p></div>
           </>}
