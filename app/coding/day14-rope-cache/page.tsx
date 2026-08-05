@@ -67,7 +67,7 @@ export default function Day14RoPECache() {
         <section id="review"><span className="record-label">07 · REVIEW</span><h2>本次完成情况与验证标准</h2><ol className="step-list"><li>正确实现相邻通道的二维旋转，并用 <code>stack + flatten</code> 交错还原。</li><li>发现并修正把完整旋转结果误当作增量、再次加回 Q/K 的错误。</li><li>完成 cache 下的绝对 <code>position_ids</code>：范围为 <code>[past_length, past_length + new_length)</code>。</li><li>明确 cached K 已旋转，只有 <code>current_k</code> 在进入 cache 前旋转一次。</li><li>核心验证应包括：位置 0 不改变输入、每对通道范数保持、完整前向与逐 token/任意分块输出一致。</li></ol><div className="test-result"><span>REVIEW STATUS</span><b>CORE LOGIC VERIFIED</b><i>DAY 14 COMPLETE</i></div></section>
       </div>
     </article>
-    <section className="next-note shell"><span>COMPLETE</span><h2>Day 14 · 位置坐标系必须连续</h2><Link href="/coding">返回训练档案 ↗</Link></section>
+    <section className="next-note shell"><span>NEXT</span><h2>Day 15 · Flow Matching Path</h2><Link href="/coding/day15-flow-matching-path">继续阅读 ↗</Link></section>
     <footer className="footer shell"><span>不凡天 · CODING TRAINING</span><span>DAY 14 · ROPE × KV CACHE</span></footer>
   </main>;
 }
