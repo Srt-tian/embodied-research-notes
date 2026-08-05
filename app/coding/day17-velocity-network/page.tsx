@@ -51,7 +51,7 @@ export default function Day17VelocityNetwork() {
         <section id="review"><span className="record-label">07 · USER REVIEW</span><h2>课后回答与修正</h2><ol className="step-list"><li><code>(B,D) → (B,1,D)</code>：回答“方便广播”方向正确；更关键的是显式把 singleton 放在 horizon 轴，使语义正确对齐。</li><li>是否需要 <code>expand</code>：回答正确，PyTorch 会从 1 自动广播到 H，无需真实复制。</li><li>为什么输出是 <code>(B,H,A)</code>：回答正确，速度与 action chunk 的每个元素一一对应。</li><li>为什么所有 horizon 位置共享一个 t：整体 chunk 在同一个 Flow Matching 进度下被更新，但 H 个位置分别预测不同速度。</li><li>时间编码复用审计：发现 Day 16/17 原始 helper 的频率范围与归一化 t 不匹配，后续应统一采用适合 [0,1] 的频率尺度。</li></ol><div className="test-result"><span>STATIC CHECK</span><b>SYNTAX &amp; ARCHIVE VERIFIED</b><i>PyTorch tests not run in generator</i></div></section>
       </div>
     </article>
-    <section className="next-note shell"><span>COMPLETE</span><h2>Day 17 · 条件速度场模块</h2><Link href="/coding">返回训练档案 ↗</Link></section>
+    <section className="next-note shell"><span>NEXT TRAINING</span><h2>Day 18 · Flow Matching 完整训练目标</h2><Link href="/coding/day18-flow-matching-objective">进入下一篇 ↗</Link></section>
     <footer className="footer shell"><span>不凡天 · CODING TRAINING</span><span>DAY 17 · VELOCITY NETWORK</span></footer>
   </main>;
 }
