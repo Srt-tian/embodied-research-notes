@@ -24,6 +24,15 @@ export type CodingEntry = {
 // 只有代码与测试结果经过检查后，练习记录才设为 published。
 export const codingEntries: CodingEntry[] = [
   {
+    slug: "day18-flow-matching-objective",
+    day: 18,
+    title: "Flow Matching 完整训练目标",
+    subtitle: "从 DataLoader batch 现场采样 noise 与 timestep，构造条件速度回归样本和 masked loss",
+    date: "2026-08-05",
+    tags: ["PyTorch", "Flow Matching", "DataLoader", "Masked Loss"],
+    status: "published",
+  },
+  {
     slug: "day17-velocity-network",
     day: 17,
     title: "Flow Matching Velocity Network",
