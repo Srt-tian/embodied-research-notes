@@ -24,6 +24,33 @@ export type CodingEntry = {
 // 只有代码与测试结果经过检查后，练习记录才设为 published。
 export const codingEntries: CodingEntry[] = [
   {
+    slug: "day17-velocity-network",
+    day: 17,
+    title: "Flow Matching Velocity Network",
+    subtitle: "融合 noised action、timestep 与机器人条件，为完整 action chunk 预测速度场",
+    date: "2026-08-05",
+    tags: ["PyTorch", "Flow Matching", "Velocity Network", "Action Chunk"],
+    status: "published",
+  },
+  {
+    slug: "day16-timestep-embedding",
+    day: 16,
+    title: "Sinusoidal Timestep Embedding",
+    subtitle: "用多频正弦特征编码连续生成进度，并审计归一化时间下的频率尺度",
+    date: "2026-08-04",
+    tags: ["PyTorch", "Flow Matching", "Time Embedding", "Broadcast"],
+    status: "published",
+  },
+  {
+    slug: "day15-flow-matching-path",
+    day: 15,
+    title: "Flow Matching 直线路径与训练目标",
+    subtitle: "从噪声与真实 action chunk 构造 x_t、target velocity，并连接 Euler 采样",
+    date: "2026-08-03",
+    tags: ["PyTorch", "Flow Matching", "Euler Sampler", "Action Chunk"],
+    status: "published",
+  },
+  {
     slug: "day14-rope-cache",
     day: 14,
     title: "RoPE 与 KV Cache 位置对齐",
