@@ -24,6 +24,15 @@ export type CodingEntry = {
 // 只有代码与测试结果经过检查后，练习记录才设为 published。
 export const codingEntries: CodingEntry[] = [
   {
+    slug: "day19-flow-matching-euler",
+    day: 19,
+    title: "Flow Matching Euler 推理",
+    subtitle: "从高斯噪声出发，沿条件速度场数值积分并生成完整 action chunk",
+    date: "2026-08-10",
+    tags: ["PyTorch", "Flow Matching", "ODE", "Euler Sampler"],
+    status: "published",
+  },
+  {
     slug: "day18-flow-matching-objective",
     day: 18,
     title: "Flow Matching 完整训练目标",
