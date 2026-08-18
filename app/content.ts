@@ -195,6 +195,15 @@ export const codingEntries: CodingEntry[] = [
 // 后续新增内容时，优先在这里增加记录；页面结构无需重写。
 export const researchEntries: ResearchEntry[] = [
   {
+    slug: "bridge",
+    kind: "paper",
+    title: "BRIDGE",
+    subtitle: "State-Gated Experts for Observed and Desired Actions",
+    date: "2026-06",
+    tags: ["UMI", "Contact-Rich", "Diffusion Policy", "Mixture of Experts"],
+    status: "published",
+  },
+  {
     slug: "masquerade",
     kind: "paper",
     title: "Masquerade",
