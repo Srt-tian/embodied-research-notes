@@ -195,6 +195,15 @@ export const codingEntries: CodingEntry[] = [
 // 后续新增内容时，优先在这里增加记录；页面结构无需重写。
 export const researchEntries: ResearchEntry[] = [
   {
+    slug: "robottt",
+    kind: "paper",
+    title: "RoboTTT",
+    subtitle: "Context Scaling for Robot Policies with Test-Time-Training Fast Weights",
+    date: "2026-07",
+    tags: ["VLA", "Test-Time Training", "Long Context", "Flow Matching"],
+    status: "published",
+  },
+  {
     slug: "bridge",
     kind: "paper",
     title: "BRIDGE",
