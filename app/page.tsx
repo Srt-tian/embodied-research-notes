@@ -16,7 +16,7 @@ export default function Home() {
       </section>
 
       <section className="home-gateway shell" id="gateway">
-        <div className="eyebrow-row"><span>KNOWLEDGE SYSTEM</span><span>03 ENTRANCES</span></div>
+        <div className="eyebrow-row"><span>KNOWLEDGE SYSTEM</span><span>04 ENTRANCES</span></div>
         <div className="gateway-grid">
           <Link href="/notes" className="gateway-card notes-gateway">
             <div className="gateway-top"><span>01 · RESEARCH NOTES</span><b>↗</b></div>
@@ -35,6 +35,12 @@ export default function Home() {
             <h2>Coding<br />Skill</h2>
             <p>蒸馏顶尖 coder 的工具、调试技巧与工程习惯。每篇聚焦一个能立即复用的方法，并给出最小模板与适用边界。</p>
             <div className="gateway-foot"><span>进入技巧库</span><i>快速蒸馏</i></div>
+          </Link>
+          <Link href="/projects" className="gateway-card skill-gateway">
+            <div className="gateway-top"><span>04 · RECOMMENDED PROJECTS</span><b>↗</b></div>
+            <h2>推荐<br />项目</h2>
+            <p>收录值得真正进入研究与开发工作流的开源项目、Agent 工具和基础设施，并记录用途、上手方式与适用边界。</p>
+            <div className="gateway-foot"><span>进入项目库</span><i>持续筛选</i></div>
           </Link>
         </div>
       </section>
