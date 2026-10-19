@@ -195,6 +195,15 @@ export const codingEntries: CodingEntry[] = [
 // 后续新增内容时，优先在这里增加记录；页面结构无需重写。
 export const researchEntries: ResearchEntry[] = [
   {
+    slug: "robodojo-agent-paradigms",
+    kind: "paper",
+    title: "RoboDojo Agent 三范式",
+    subtitle: "Coding-as-Policy、PhysicalRSI Self-Harness 与 WorldScape-R²SI 模型进化",
+    date: "2026-10",
+    tags: ["RoboDojo", "Robot Agent", "Self-Harness", "Model RSI"],
+    status: "published",
+  },
+  {
     slug: "robottt",
     kind: "paper",
     title: "RoboTTT",
