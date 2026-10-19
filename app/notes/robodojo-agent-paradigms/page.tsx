@@ -1,30 +1,30 @@
 import Link from "next/link";
 import { SiteHeader } from "../../site-header";
 
-const sections = [
-  {title:"01 · Online Coding / Skill Agent",label:"EmbodiedEvo",intro:"Agent 在 Episode 中读图、决定子任务、生成或调用控制代码。Code 是动态 Skill；Python/Runtime 执行多个 Native Actions。",items:["Agent 决定抓取顺序、机械臂选择、目标和反馈后的改动。","Code / Skill 负责循环、插值、分支及底层 step(action)；无需每步调用 LLM。","Skills 与 Lessons 跨场景继承；程序执行次数不等于 LLM 推理次数。"]},
-  {title:"02 · Recursive Self-Harness",label:"PhysicalRSI",intro:"System 1 在既有 Harness 下执行；System 2 主要跨 Rollout 分析失败，生成候选修改，再验证和继承。",items:["Harness 包含 Memory、Skills、Tools、Routing 和控制逻辑。","反思 Agent 并非逐个动作调用；可有 Episode 初始路由，但不等于逐步决策。","Vary → Evaluate → Select → Inherit，纯 Harness 更新不必训练 VLA 权重。"]},
-  {title:"03 · Joint Agent–Harness–Model RSI",label:"WorldScape-R²SI",intro:"部分 Rollout 由 Inner LLM Agent 做在线高层决策，部分可直接由 WSP/Simate-beta 等反应式模型执行；Outer Agent 负责跨轮次演化。",items:["Reactive 表示直接由策略输出动作的执行方式，不排斥记忆或内部规划。","WSP 属于 WAM；Simate-beta 的具体 VLA/WAM 架构需谨慎核实。","模型更新需要已验证的数据、明确的训练监督和独立评估；不能只看 Harness 改动后的总分。"]},
+const cases = [
+ {id:"coding",num:"01",short:"在线决策",name:"Coding-as-Policy",project:"EmbodiedEvo",lead:"Agent 负责任务级决策与动态编写 Skill，代码负责把意图落实为连续机器人动作。",agent:"Episode 内，根据观测决定目标、臂选择、Skill 及代码修订",control:"Python / Skill → Native step(action)",update:"Skills + Lessons，不必更新模型权重",flow:["Observation","LLM Agent","Code / Skill","Robot Actions","Feedback → Agent"],points:["Code 本质是动态 Skill，不是一个新的低层策略网络。","一次代码执行可以包含许多 Native Actions；不等于一次 LLM forward。","高层语义变化或失败后，Agent 重新读取观测并修订程序。"]},
+ {id:"harness",num:"02",short:"离线反思",name:"Recursive Self-Harness",project:"PhysicalRSI",lead:"System 1 执行已经确定的 Harness；System 2 在 Rollout 之后分析失败、修改并验证 Harness。",agent:"主要跨 Rollout 反思、诊断和生成新 Harness 候选",control:"System 1 Harness → π0.5 / Memory / Code Policy",update:"Routing、Memory、Skills、Tools 和控制代码",flow:["Harness Hₖ","Rollout + Evidence","Reflection Agent","Evaluate / Select","Harness Hₖ₊₁"],points:["反思 Agent 不需要逐个 timestep 在线调用。","候选必须经过独立验证，不能以 LLM 的主观判断代替成功率。","纯 Self-Harness 迭代通常保持底层模型参数冻结。"]},
+ {id:"model",num:"03",short:"联合进化",name:"Agent–Harness–Model RSI",project:"WorldScape-R²SI",lead:"兼有在线 Inner Agent 与跨 Rollout Outer Recursion Agent；部分任务也可直接调用反应式模型。",agent:"Inner Agent 在部分 Rollout 中在线决策；Outer Agent 负责反思和迭代",control:"Agent + Skill，或 Direct Reactive Policy（WSP / Simate）",update:"Skill / Harness；有条件时进一步更新 Reactive Model",flow:["Inner Agent / Reactive","Rollout","Outer Agent + Verifier","Skill / Model Update","Re-evaluation"],points:["不是所有 Rollout 都调用外部 LLM；Direct Reactive 路径可直接输出动作。","Reactive 是执行方式：WSP 属于 WAM；Simate-beta 完整架构待核实。","Model RSI 必须用可验证轨迹训练并与仅更新 Harness 的效果做消融。"]}
 ];
-export default function RoboDojoAgentParadigms() {
-return <main><SiteHeader/>
-<section className="paper-head shell"><div className="paper-breadcrumb"><Link href="/notes">NOTES</Link><span>/</span><span>RoboDojo Agent Paradigms</span></div>
-<div className="paper-title masquerade-title"><span>RESEARCH NOTE · OCT 2026</span><h1>RoboDojo Agent</h1><p>三种技术范式：在线决策、Harness 反思与模型进化</p></div>
-<div className="paper-meta"><div><span>TOPIC</span><b>AGENT / ROBOT RSI</b></div><div><span>DATE</span><b>2026-10-19</b></div><div><span>TYPE</span><b>RESEARCH SUMMARY</b></div></div></section>
-<section className="paper-body shell"><article className="paper-content" style={{maxWidth:900,margin:"0 auto"}}>
-<div className="evidence-label">核心理解 · 控制方式与更新对象是不同的分类轴</div>
-<p className="paper-lead">EmbodiedEvo 研究 Agent 如何在线组织行为；PhysicalRSI 研究 Agent 如何反思并改进执行 Harness；WorldScape-R²SI 的联合路径进一步探索如何把执行经验转成 Skill 与模型能力。这三类是便于比较的系统范式，并不是彼此互斥的模型类别。</p>
-<div className="insight"><span>最重要的边界</span><p>Code ≈ 动态 Skill；PhysicalRSI 的 System 2 主要负责 Rollout 后反思，不是每一步动作的 LLM；R²SI 的部分 Rollout 则确实有 Inner LLM Agent 在线参与。</p></div>
-{sections.map(s=><section key={s.label} style={{marginTop:36}}><div className="evidence-label">{s.label}</div><h2>{s.title}</h2><p>{s.intro}</p><ol className="training-steps">{s.items.map(i=><li key={i}><p>{i}</p></li>)}</ol></section>)}
-<h2 style={{marginTop:40}}>三范式对照</h2>
-<div style={{overflowX:"auto"}}><table style={{borderCollapse:"collapse",width:"100%",fontSize:14}}><thead><tr>{["问题","EmbodiedEvo","PhysicalRSI","WorldScape-R²SI"].map(x=><th key={x} style={{textAlign:"left",padding:12,borderBottom:"1px solid #8885"}}>{x}</th>)}</tr></thead><tbody>
-{[
-["Rollout 中 LLM 决策","在线高层分段决策","System 2 不逐步参与","Agent 路径有；Direct Reactive 路径无外部 LLM"],
-["谁执行机器人动作","Python Code / Skill","System 1 Harness / VLA","Skills 或 Reactive Policy"],
-["Agent 更新什么","代码、Skills、Lessons","Harness 候选与版本","Skills/Harness，部分路线训练模型"],
-["参数更新是否必须","否","否","仅 Model RSI 路线需要"]
-].map(row=><tr key={row[0]}>{row.map((v,i)=><td key={i} style={{verticalAlign:"top",padding:12,borderBottom:"1px solid #8883"}}>{v}</td>)}</tr>)}</tbody></table></div>
-<h2 style={{marginTop:40}}>研究启示</h2><p>针对双臂 Piper：可让在线 Agent 只负责目标、手臂选择与技能调用；System 1 用受约束 EEF Delta → IK → Qpos 控制；System 2 汇总真实状态、指令和视觉反馈并迭代 Harness；最后使用验证过的数据后训练 VLA/WAM。应逐层消融，而不是同时引入所有模块。</p>
-<div className="source-strip"><b>完整可编辑研究文档</b><p><a href="https://github.com/Srt-tian/embodied-research-notes/blob/main/research/robodojo-agent-paradigms-2026-10.md" target="_blank" rel="noreferrer">Markdown 原文 ↗</a>　·　<a href="https://github.com/Einsia/EmbodiedEvo" target="_blank" rel="noreferrer">EmbodiedEvo ↗</a>　·　<a href="https://github.com/PhysicalRSI/PhysicalRSI" target="_blank" rel="noreferrer">PhysicalRSI ↗</a>　·　<a href="https://github.com/manifoldai-research/WorldScape-Policy" target="_blank" rel="noreferrer">WorldScape Policy ↗</a></p></div>
-</article></section></main>
+const comparisons=[
+ ["Rollout 内 LLM","参与高层分段决策","System 2 不逐步参与","部分路径参与"],
+ ["低层动作执行","Code / Skill","System 1 Harness","Skills 或 Reactive Model"],
+ ["更新对象","Skills / Lessons","Harness","Harness + 可选模型参数"],
+ ["权重更新","不必","不必","Model RSI 路线需要"]
+];
+export default function RoboDojoAgentParadigms(){
+ return <main className="rda-page"><SiteHeader/>
+ <header className="rda-hero shell"><div className="paper-breadcrumb"><Link href="/notes">NOTES</Link><span>/</span><span>AGENT SYSTEMS</span></div>
+ <div className="rda-kicker">RESEARCH NOTE / 2026.10.19</div><h1>RoboDojo<br/><em>Agent Paradigms</em></h1><p className="rda-subtitle">三种技术范式：在线决策、Harness 反思与模型进化</p>
+ <div className="rda-summary"><strong>核心区分</strong><p>两个正交问题：<b>谁在 Rollout 中做决策？</b>以及<b>经验最终更新什么？</b> 三种范式是系统设计的归纳，不是互斥的模型类别。</p></div></header>
+ <div className="rda-layout shell"><nav className="rda-nav" aria-label="文章目录"><span>CONTENTS</span>{cases.map(x=><a key={x.id} href={"#"+x.id}>{x.num}　{x.short}</a>)}<a href="#compare">04　横向比较</a><a href="#piper">05　研究启示</a><a className="rda-nav-source" href="https://github.com/Srt-tian/embodied-research-notes/blob/main/research/robodojo-agent-paradigms-2026-10.md">Markdown ↗</a></nav>
+ <article className="rda-article"><section className="rda-intro"><span className="rda-overline">SYSTEMS AT A GLANCE</span><div className="rda-overview">{cases.map(c=><a href={"#"+c.id} key={c.id}><span>{c.num} / {c.project}</span><b>{c.short}</b><p>{c.lead}</p><i>↗</i></a>)}</div></section>
+ {cases.map(c=><section className="rda-section" id={c.id} key={c.id}><div className="rda-section-head"><span>{c.num} / {c.project}</span><h2>{c.name}</h2><p>{c.lead}</p></div>
+ <div className="rda-flow" aria-label={c.project+"执行流程"}>{c.flow.map((s,i)=><div className="rda-flow-item" key={s}><span>{String(i+1).padStart(2,"0")}</span><b>{s}</b>{i!==c.flow.length-1&&<span className="rda-flow-arrow">↓</span>}</div>)}</div>
+ <div className="rda-facts"><div><span>AGENT ROLE</span><p>{c.agent}</p></div><div><span>ACTION EXECUTOR</span><p>{c.control}</p></div><div><span>IMPROVEMENT TARGET</span><p>{c.update}</p></div></div>
+ <div className="rda-reading"><h3>关键理解</h3>{c.points.map((p,i)=><p key={p}><span>{String(i+1).padStart(2,"0")}</span>{p}</p>)}</div></section>)}
+ <section id="compare" className="rda-section"><div className="rda-section-head"><span>04 / COMPARISON</span><h2>核心区别</h2><p>比较 Agent 介入时机、执行器与更新对象，比简单按模型名称分类更准确。</p></div><div className="rda-table-wrap"><table><thead><tr><th>维度</th><th>EmbodiedEvo</th><th>PhysicalRSI</th><th>WorldScape-R²SI</th></tr></thead><tbody>{comparisons.map(row=><tr key={row[0]}>{row.map((v,i)=><td key={i}>{v}</td>)}</tr>)}</tbody></table></div></section>
+ <section id="piper" className="rda-section"><div className="rda-section-head"><span>05 / TAKEAWAYS</span><h2>双臂 Piper 的研究启示</h2></div><div className="rda-reading"><h3>分层，而不是让 LLM 控制每一帧</h3><p><span>01</span>Online Agent：按需决定子目标、左右臂与 Skill。</p><p><span>02</span>System 1：受约束的 EEF Delta → IK → Qpos，保持 30 Hz 底层控制与安全约束。</p><p><span>03</span>System 2：记录真实状态、命令和视觉反馈，跨 Rollout 修改 Harness 并独立验证。</p><p><span>04</span>Model RSI：积累高质量标注与验证轨迹后，再引入 VLA/WAM 后训练。</p></div></section>
+ <div className="rda-sources"><span>FURTHER READING</span><a href="https://github.com/Einsia/EmbodiedEvo">EmbodiedEvo ↗</a><a href="https://github.com/PhysicalRSI/PhysicalRSI">PhysicalRSI ↗</a><a href="https://github.com/manifoldai-research/WorldScape-Policy">WorldScape Policy ↗</a><a href="https://github.com/Srt-tian/embodied-research-notes/blob/main/research/robodojo-agent-paradigms-2026-10.md">完整 Markdown ↗</a></div>
+ </article></div></main>;
 }
