@@ -1,9 +1,11 @@
-# RoboDojo Agent 三种技术范式：控制、反思与模型进化
+# RoboDojo Agent 技术范式
+
+**在线决策 · Harness 反思 · 模型进化**
 
 > 研究笔记｜2026-10-19｜主题：Embodied Agent / RoboDojo / RSI  
 > 范围：概念与公开架构总结。各项目成绩与开源状态随时间变化，以项目官方仓库为准。
 
-## 0. 核心结论
+## 核心结论
 
 目前值得沿着三个方向理解 RoboDojo 上的 Agent 系统：
 
@@ -13,40 +15,26 @@
 
 **分类提醒**：这三种是为了理解现有代表系统而作的“系统范式”归纳，并非彼此排斥的三类算法。Coding-as-Policy 与 Skill Agent 高度重叠；Harness RSI 和 Model RSI 是不同的“更新对象”，可与任意执行架构组合。
 
-## 1. 两条正交轴
+## 两条正交轴
 
 | 轴 | 选项 | 判断问题 |
 |---|---|---|
 | Episode 内执行 | 在线 LLM Agent + Skills / 直接 Reactive Policy | **谁在 Rollout 中决定下个子任务与动作？** |
 | Episode 间改进 | 无更新 / Harness 更新 / Model 参数更新 | **经验最后被写到哪里？** |
 
-### 总览
+### 执行与改进的关系
 
-```text
-                    EXECUTION (episode 内)
-Task + RGB + State ──────────────────────────────────────────────────────────┐
-                    │                                                       │
-        Online LLM / Coding Agent                                    Reactive VLA / WAM
-        decide subgoal / skill / code                                observation → actions
-                    │                                                       │
-              Code / Skill / Tool                                            │
-                    └──────────────────────┬────────────────────────────────┘
-                                           ↓
-                                 Robot Runtime / Rollout
-                                           ↓
-                                 Trajectory + Feedback
-                                           ↓
-                    RECURSIVE IMPROVEMENT (episode 间)
-                           ┌───────────────┴────────────────┐
-                           ↓                                ↓
-                   Harness update                    Model training
-                 Skills / Memory / Code              θ_k → θ_(k+1)
-                           └───────────────┬────────────────┘
-                                           ↓
-                               Independent evaluation
-```
+**Episode 内：执行**
 
-## 2. 范式一：Online Coding-as-Policy / Dynamic Skills
+> Task + Observation → Online Agent + Skill **或** Reactive Policy → Robot Runtime → Rollout
+
+**Episode 间：改进**
+
+> Rollout + Feedback → Failure Analysis → Harness / Model Update → Independent Evaluation
+
+关键是把「Rollout 内谁做决策」与「Rollout 后更新什么」分开。
+
+## 范式一：Online Coding-as-Policy / Dynamic Skills
 
 **代表：EmbodiedEvo。**
 
@@ -58,17 +46,13 @@ Task + RGB + State ────────────────────�
 | Python Code / Skill | 用循环、分支、插值、条件检查把目标转换成多次 API 调用 | 没有额外 LLM 时，不会自动获得开放式语义推理 |
 | Robot Runtime | 接收 `step(action)`、推进动力学、返回状态 | 不负责自主任务理解 |
 
-**一次 Episode 的关键时序**
+### Agent 与 Code 的分工
 
-```text
-LLM observe → write/run code C1 → [step(action) × n1] → result
-LLM observe → revise/run C2    → [step(action) × n2] → result
-...
-```
+1. **Agent** 查看观测，决定任务阶段、目标、机械臂，并生成或选择一段 Code/Skill。
+2. **Code/Skill** 通过循环、插值和条件判断执行多个 `step(action)`，不必逐步调用 LLM。
+3. **Agent** 在代码提交结束后读取反馈，决定下一段操作或修订代码。
 
-(n_k) 是可变的，不等于预设的 VLA Horizon；代码内部也可以在连续调用 `step` 之间读取观测并执行既定的程序级条件判断。**15 次代码执行不是 15 次 Native Actions，也不能直接等同于 15 次 LLM forward。**
-
-以论文展示的堆叠案例为例：15 次代码执行共消耗 395 个 Native Actions；Agent 决定抓取顺序、目标与何时根据视觉重新对齐，Skill 实现下降、闭合、抬升及搬运等多步控制。
+论文展示的堆叠案例共 **15 次代码执行、395 个 Native Actions**；代码执行次数不等于 LLM forward 次数。
 
 **记忆与迁移**：可复用代码为 Skills；前置条件、失败教训、诊断规则为 Lessons。Playground 探索后将经验迁移到独立 Test；这种经验迁移主要不是参数训练。
 
@@ -76,7 +60,7 @@ LLM observe → revise/run C2    → [step(action) × n2] → result
 
 **挑战**：物体定位与坐标变换、语义判断时的 LLM 延迟、长程序期间反馈不足、接触控制、动态代码安全。
 
-## 3. 范式二：Recursive Self-Harness
+## 范式二：Recursive Self-Harness
 
 **代表：PhysicalRSI。**
 
@@ -84,24 +68,16 @@ LLM observe → revise/run C2    → [step(action) × n2] → result
 
 **System 2 — Improvement Agent**：读取成功/失败 Rollout 和既有 Harness，对问题进行归因，提出和改写候选，然后独立验证、选择、继承。
 
-```text
-H_k → rollout τ_k → evidence / failure attribution
-                         ↓
-                propose H'_1, H'_2, ...
-                         ↓
-          contract checks + controlled evaluation
-                         ↓
-                  select / reject / inherit
-                         ↓
-                        H_(k+1)
-```
+### 反思进化循环
 
-形式上可写：
+1. 使用当前 Harness \(H_k\) 生成 Rollout。
+2. System 2 从成功/失败证据中提出多个修改候选。
+3. 对候选进行独立验证，并与原版本在可比预算下评测。
+4. 接受通过验证的版本，形成 \(H_{k+1}\)；必要时保留或回滚。
 
-```text
-H_(k+1) = Select({ H_k, Vary_Agent(H_k, evidence_k) }, evaluation)
-θ_(k+1) = θ_k                    # 纯 Self-Harness 配置
-```
+纯 Harness 更新不必修改模型权重：\(\theta_{k+1}=\theta_k\)。
+
+
 
 **Agent 是反思迭代者，不是默认的逐步动作决策器。** 某些实现可能在 Episode 开始有 Skill Selection 或初始任务计划，不能据此误写为每个 timestep 都有 Agent 推理。
 
@@ -111,7 +87,7 @@ H_(k+1) = Select({ H_k, Vary_Agent(H_k, evidence_k) }, evaluation)
 
 **挑战**：失败因果归因、多候选评估的 Rollout 成本、经验跨任务泛化以及“自我修改改进器”与“仅改执行 Harness”的界限。
 
-## 4. 范式三：Joint Agent–Harness–Model RSI
+## 范式三：Joint Agent–Harness–Model RSI
 
 **代表：WorldScape-R²SI；SenseNova-RoboRSI 的模型级迭代方向。**
 
@@ -121,20 +97,18 @@ H_(k+1) = Select({ H_k, Vary_Agent(H_k, evidence_k) }, evaluation)
 - **Direct Reactive Policy 路径**：可跳过外部在线 LLM，由 WSP 或 Simate-beta 等策略直接观察并输出动作。
 - **Outer Recursion Agent**：跨 Rollout 评估、修订 Skills/Harness，并在具备数据和训练链路时推动 Reactive Model 改进。
 
-```text
-                      ┌─ Online Inner Agent (LLM) → Skill/Code ─┐
-Task + Observation ───┤                                         ├─→ Rollout
-                      └─ Direct Reactive Model (no outer LLM) ─┘        │
-                                                                        ↓
-                                                           Evidence + Verifier
-                                                                        ↓
-                                      ┌─────────────────────────────────┴──────────┐
-                                      ↓                                            ↓
-                                 Update Harness                             Train θ
-                                      └─────────────────────────────────┬──────────┘
-                                                                        ↓
-                                                                 Re-evaluate
-```
+### 双层 Agent 与两条执行路径
+
+**Rollout 内：**
+
+- **Agent + Skills**：Inner Agent 可以调用大模型做高层决策，代码或 Reactive Model 负责实际动作。
+- **Direct Reactive**：WSP / Simate-beta 可以直接根据观测输出动作，无须额外在线 LLM 决策。
+
+**Rollout 后：**
+
+Outer Recursion Agent 收集执行反馈，更新 Harness/Skills；具备可靠训练数据时，进一步训练底层模型，然后独立评估。
+
+
 
 ### Reactive Model、VLA、WAM 的区别
 
@@ -163,18 +137,26 @@ verified rollouts → curate data → train θ_(k+1) → independent evaluation
 
 需对齐交互预算与训练数据，避免把 Harness 的收益误判成模型权重更新。
 
-## 5. 三范式对照：最值得记忆的一张表
+## 三种范式快速对照
 
-| 问题 | EmbodiedEvo | PhysicalRSI | WorldScape-R²SI |
-|---|---|---|---|
-| Rollout 中 LLM 决策？ | 是，高层分段决策 | System 1 通常自主执行；System 2 不逐步参与 | Agent 路径是；Direct Reactive 路径不需要外部 LLM |
-| 动作是谁下发？ | Code/Skill → Runtime | Harness / VLA / Code Policy | Skill 或 Reactive Model |
-| Agent 主要产物 | 当前控制程序、可复用 Skills/Lessons | 新 Harness 候选 + 评估记录 | Skills/Harness 候选及模型迭代数据/过程 |
-| 更新发生在哪？ | Episode 内修订 + 跨场景知识迁移 | 主要跨 Rollout | 在线执行 + 跨 Rollout / 模型训练 |
-| 默认需要更新权重？ | 否 | 否 | 部分 Model RSI 路线需要 |
-| 成功的关键 | 代码是否正确执行并随反馈修正 | 修改是否通过独立验证 | 新 Harness 与新模型是否真实泛化 |
+### EmbodiedEvo
+- **Agent 何时参与？** Episode 内多次参与高层决策。
+- **谁执行动作？** Code/Skill 与 Robot Runtime。
+- **经验写到哪里？** Skills / Lessons；无需更新权重。
 
-## 6. 对双臂 Piper 的启示
+### PhysicalRSI
+- **Agent 何时参与？** 主要跨 Rollout 反思和改进。
+- **谁执行动作？** 当前 System 1 Harness / VLA / Code Policy。
+- **经验写到哪里？** Harness、Memory、Skills、版本继承。
+
+### WorldScape-R²SI
+- **Agent 何时参与？** 部分 Rollout 在线 Inner Agent；跨 Rollout Outer Agent。
+- **谁执行动作？** Code/Skill 或 Direct Reactive Policy。
+- **经验写到哪里？** Harness/Skills；模型改进路径还更新参数。
+
+
+
+## 对双臂 Piper 的启示
 
 现有三路 RGB、30 Hz、实测 EEF 锚点和 EEF Delta → IK → Qpos 的链路很适合将问题分层：
 
@@ -185,7 +167,7 @@ verified rollouts → curate data → train θ_(k+1) → independent evaluation
 
 建议研究顺序：先建立 **固定 System 1 + 自动评估 + Harness 迭代**，再验证 Online Agent 是否增加收益，最后加入模型权重更新。这便于分别测量三种能力来源。
 
-## 7. 待核实事项与证据边界
+## 待核实事项与证据边界
 
 - 不应把项目方榜单自报分数视为已认证结果；榜单会更新。
 - WorldScape Policy 2.0 模型资源公开，不等于 R²SI 完整 Agent/RSI 系统已经完整开源。
@@ -193,7 +175,7 @@ verified rollouts → curate data → train θ_(k+1) → independent evaluation
 - Rollout 中在线 Agent 的决策次数、频率、Token 开销需要具体日志核算；一次代码执行不等于一次模型调用。
 - 真机探索需要独立的安全检查、Action API 沙箱和人工急停机制。
 
-## 8. 项目与阅读入口
+## 项目与阅读入口
 
 - [EmbodiedEvo — GitHub](https://github.com/Einsia/EmbodiedEvo) ｜[论文](https://arxiv.org/abs/2610.18867)
 - [PhysicalRSI — GitHub](https://github.com/PhysicalRSI/PhysicalRSI) ｜[Architecture](https://github.com/PhysicalRSI/PhysicalRSI/blob/main/docs/architecture.md)
